@@ -12,10 +12,16 @@ import { Doctor } from '../types/doctors';
 import { RootStackParamList } from '../types/navigation';
 import { useFocusEffect } from '@react-navigation/native';
 
+/**
+ * Tipagem das props da HomeScreen, integrando com a navegação
+ */
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
 };
 
+/**
+ * Lista fixa de médicos mockada para exibição
+ */
 const doctors: Doctor[] = [
   {
     id: '1',
@@ -23,24 +29,18 @@ const doctors: Doctor[] = [
     specialty: 'Cardiologista',
     image: 'https://mighty.tools/mockmind-api/content/human/91.jpg',
   },
-  {
-    id: '2',
-    name: 'Dra. Maria Santos',
-    specialty: 'Dermatologista',
-    image: 'https://mighty.tools/mockmind-api/content/human/97.jpg',
-  },
-  {
-    id: '3',
-    name: 'Dr. Pedro Oliveira',
-    specialty: 'Oftalmologista',
-    image: 'https://mighty.tools/mockmind-api/content/human/79.jpg',
-  },
+  ...
 ];
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+  // Estado que armazena consultas salvas no AsyncStorage
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  // Controle do "puxar para atualizar"
   const [refreshing, setRefreshing] = useState(false);
 
+  /**
+   * Carrega consultas armazenadas no AsyncStorage
+   */
   const loadAppointments = async () => {
     try {
       const storedAppointments = await AsyncStorage.getItem('appointments');
@@ -52,22 +52,34 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   };
 
+  /**
+   * useFocusEffect → recarrega consultas sempre que a tela volta ao foco
+   */
   useFocusEffect(
     React.useCallback(() => {
       loadAppointments();
     }, [])
   );
 
+  /**
+   * Função de refresh (pull-to-refresh)
+   */
   const onRefresh = async () => {
     setRefreshing(true);
     await loadAppointments();
     setRefreshing(false);
   };
 
+  /**
+   * Busca os dados do médico pelo id associado à consulta
+   */
   const getDoctorInfo = (doctorId: string): Doctor | undefined => {
     return doctors.find(doctor => doctor.id === doctorId);
   };
 
+  /**
+   * Renderização de cada card de consulta
+   */
   const renderAppointment = ({ item }: { item: Appointment }) => {
     const doctor = getDoctorInfo(item.doctorId);
     
@@ -82,6 +94,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <Status status={item.status}>
             {item.status === 'pending' ? 'Pendente' : 'Confirmado'}
           </Status>
+          {/* Botões de ação para editar e deletar */}
           <ActionButtons>
             <ActionButton>
               <Icon name="edit" type="material" size={20} color={theme.colors.primary} />
@@ -97,11 +110,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   return (
     <Container>
+      {/* Cabeçalho */}
       <HeaderContainer>
         <HeaderTitle>Minhas Consultas</HeaderTitle>
       </HeaderContainer>
 
       <Content>
+        {/* Botão para agendar nova consulta */}
         <Button
           title="Agendar Nova Consulta"
           icon={
@@ -121,6 +136,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           onPress={() => navigation.navigate('CreateAppointment')}
         />
 
+        {/* Lista de consultas */}
         <AppointmentList
           data={appointments}
           keyExtractor={(item: Appointment) => item.id}
@@ -134,97 +150,3 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         />
       </Content>
     </Container>
-  );
-};
-
-const Container = styled.View`
-  flex: 1;
-  background-color: ${theme.colors.background};
-`;
-
-const Content = styled.View`
-  flex: 1;
-  padding: ${theme.spacing.medium}px;
-`;
-
-const AppointmentList = styled(FlatList)`
-  flex: 1;
-`;
-
-const AppointmentCard = styled.View`
-  background-color: ${theme.colors.white};
-  border-radius: 8px;
-  padding: ${theme.spacing.medium}px;
-  margin-bottom: ${theme.spacing.medium}px;
-  flex-direction: row;
-  align-items: center;
-  elevation: 2;
-  shadow-color: #000;
-  shadow-opacity: 0.1;
-  shadow-radius: 4px;
-  shadow-offset: 0px 2px;
-`;
-
-const DoctorImage = styled.Image`
-  width: 60px;
-  height: 60px;
-  border-radius: 30px;
-  margin-right: ${theme.spacing.medium}px;
-`;
-
-const InfoContainer = styled.View`
-  flex: 1;
-`;
-
-const DoctorName = styled.Text`
-  font-size: ${theme.typography.subtitle.fontSize}px;
-  font-weight: ${theme.typography.subtitle.fontWeight};
-  color: ${theme.colors.text};
-`;
-
-const DoctorSpecialty = styled.Text`
-  font-size: ${theme.typography.body.fontSize}px;
-  color: ${theme.colors.text};
-  opacity: 0.8;
-  margin-bottom: 4px;
-`;
-
-const DateTime = styled.Text`
-  font-size: ${theme.typography.body.fontSize}px;
-  color: ${theme.colors.primary};
-  margin-top: 4px;
-`;
-
-const Description = styled.Text`
-  font-size: ${theme.typography.body.fontSize}px;
-  color: ${theme.colors.text};
-  opacity: 0.8;
-  margin-top: 4px;
-`;
-
-const Status = styled.Text<{ status: string }>`
-  font-size: ${theme.typography.body.fontSize}px;
-  color: ${(props: { status: string }) => props.status === 'pending' ? theme.colors.error : theme.colors.success};
-  margin-top: 4px;
-  font-weight: bold;
-`;
-
-const ActionButtons = styled.View`
-  flex-direction: row;
-  justify-content: flex-end;
-  margin-top: ${theme.spacing.small}px;
-`;
-
-const ActionButton = styled(TouchableOpacity)`
-  padding: ${theme.spacing.small}px;
-  margin-left: ${theme.spacing.small}px;
-`;
-
-const EmptyText = styled.Text`
-  text-align: center;
-  color: ${theme.colors.text};
-  opacity: 0.6;
-  margin-top: ${theme.spacing.large}px;
-`;
-
-export default HomeScreen;
