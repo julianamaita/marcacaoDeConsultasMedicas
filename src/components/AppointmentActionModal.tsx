@@ -1,4 +1,6 @@
+// Importa o React e hooks para gerenciar estado e efeitos.
 import React from 'react';
+// Permite criar componentes estilizados usando o tema.
 import styled from 'styled-components/native';
 import { Modal, ViewStyle } from 'react-native';
 import { Button, Input } from 'react-native-elements';
